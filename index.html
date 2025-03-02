@@ -2,8 +2,8 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>JARVIS WebVR</title>
-  <meta name="description" content="An AR/VR interface with voice commands for productivity">
+  <title>JARVIS WebVR for Meta Quest 3</title>
+  <meta name="description" content="An AR/VR interface with voice commands for productivity on Meta Quest 3">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <!-- A-Frame and A-Frame components -->
@@ -18,6 +18,9 @@
   <script src="js/screen-manager.js"></script>
   <script src="js/workstation-manager.js"></script>
   <script src="js/hand-controller.js"></script>
+  <script src="js/environment-manager.js"></script>
+  <script src="js/surface-detector.js"></script>
+  <script src="js/remote-desktop-manager.js"></script>
 
   <link rel="stylesheet" type="text/css" href="css/styles.css">
 </head>
@@ -33,11 +36,22 @@
       <div id="response-text">Say "Hey Jarvis" to activate</div>
       <button id="listen-button">Listen</button>
     </div>
+
+    <div id="mode-panel">
+      <button id="lab-mode-button">Lab Mode</button>
+      <button id="ar-mode-button">AR Mode</button>
+    </div>
   </div>
 
-  <a-scene webxr="requiredFeatures: hit-test,local-floor;" 
+  <a-scene webxr="requiredFeatures: hit-test,local-floor,hand-tracking; 
+                  optionalFeatures: dom-overlay,unbounded;" 
            environment="preset: default; ground: none;"
-           workstation-manager>
+           workstation-manager
+           surface-detector
+           environment-manager
+           screen-manager="maxScreens: 10; maxTabsPerScreen: 10"
+           remote-desktop-manager
+           voice-controller="apiKey: AIzaSyC31UsvHYJQMpqFahpqX-t4yPCwdruL0h0">
     
     <!-- Camera and controllers -->
     <a-entity id="rig" position="0 1.6 0">
@@ -46,11 +60,15 @@
       <a-entity id="left-hand" 
                 hand-tracking="hand: left"
                 hand-controls="hand: left; handModelStyle: lowPoly; color: #15ACCF"
+                hand-controller="hand: left; effectColor: #15ACCF"
+                raycaster="objects: .virtual-screen, .keyboard-key; far: 3; showLine: true; lineColor: #15ACCF"
                 visible="true"></a-entity>
                 
       <a-entity id="right-hand" 
                 hand-tracking="hand: right"
                 hand-controls="hand: right; handModelStyle: lowPoly; color: #15ACCF"
+                hand-controller="hand: right; effectColor: #4c86f1"
+                raycaster="objects: .virtual-screen, .keyboard-key; far: 3; showLine: true; lineColor: #4c86f1"
                 visible="true"></a-entity>
     </a-entity>
     
