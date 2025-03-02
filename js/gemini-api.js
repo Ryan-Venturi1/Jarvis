@@ -1,10 +1,11 @@
-/* JARVIS Enhanced Voice Controller with Gemini Integration */
+/* JARVIS Voice Controller with Gemini */
 
-// A-Frame component for voice recognition and commands with Gemini API
+// A-Frame component for voice recognition and commands
 AFRAME.registerComponent('voice-controller', {
   schema: {
     autoStart: {type: 'boolean', default: false},
     listenKey: {type: 'string', default: 'Space'},
+    wakeWord: {type: 'string', default: 'jarvis'},
     wakeWords: {type: 'array', default: ['jarvis', 'hey jarvis', 'yo jarvis', 'hi jarvis']},
     apiKey: {type: 'string', default: 'AIzaSyC31UsvHYJQMpqFahpqX-t4yPCwdruL0h0'},
     responseVolume: {type: 'number', default: 1.0},
@@ -23,6 +24,10 @@ AFRAME.registerComponent('voice-controller', {
     this.processingCommand = false;
     this.commandHistory = [];
     this.lastCommandTime = 0;
+    
+    // Flag to prevent multiple simultaneous recognition attempts
+    this._isStartingRecognition = false;
+    this._manualStop = false;
     
     // Bind methods
     this.toggleListening = this.toggleListening.bind(this);
@@ -102,26 +107,18 @@ AFRAME.registerComponent('voice-controller', {
             const url = `${this.apiEndpoint}?key=${this.apiKey}`;
             
             // Create system prompt for JARVIS in VR
-            const systemPrompt = `You are JARVIS, Tony Stark's AI assistant in a virtual reality interface for Meta Quest 3. Your responses should be concise, helpful, and in the authentic style of Iron Man's JARVIS AI. Use "sir" or "Ms." appropriately when addressing the user in a British-accented professional manner.
-
-            The user is working in a VR environment with the following capabilities:
-            - Up to 10 virtual screens with multiple tabs each
-            - Remote desktop connections to actual computers
-            - Hand tracking with Iron Man-inspired gesture controls
-            - Surface detection for placing keyboards on real-world surfaces
-            - Environmental awareness with AR passthrough capabilities
+            const systemPrompt = `You are JARVIS, Tony Stark's AI assistant in a virtual reality interface for Meta Quest 3. Your responses should be concise, helpful, and in the style of Iron Man's JARVIS AI.
             
-            Include these action tags in your response when appropriate:
-            - [CREATE_SCREEN] - Create a new virtual screen
-            - [CREATE_WORKSPACE] - Set up a multi-screen workspace 
-            - [OPEN_DESKTOP] - Open remote desktop connection
-            - [SWITCH_TO_LAB] - Switch to Stark Industries lab environment
-            - [SWITCH_TO_AR] - Switch to AR passthrough mode
-            - [SCAN_SURFACES] - Scan for keyboard-compatible surfaces
-            - [OPEN_APP:name] - Open a specific application on remote desktop
-            - [ARRANGE_SCREENS] - Arrange screens in optimal layout
+            The user is using your VR interface where they can create virtual screens, browse the web, and manage their workspace using voice commands and hand gestures.
             
-            Keep responses under 3 sentences for efficient VR interaction. Respond exactly as JARVIS would in the Iron Man films - professional, slightly witty, and unfailingly competent.`;
+            Include these instructions in your response when appropriate:
+            - If the user wants to create a screen, include [CREATE_SCREEN] in your response.
+            - If the user wants to set up a workspace with multiple screens, include [CREATE_WORKSPACE] in your response.
+            - If the user wants to open remote desktop, include [OPEN_DESKTOP] in your response.
+            - If the user wants to switch to lab environment mode, include [SWITCH_TO_LAB] in your response.
+            - If the user wants to switch to AR passthrough mode, include [SWITCH_TO_AR] in your response.
+            
+            Keep responses short and useful for a VR environment. The user can have up to 10 virtual screens with multiple tabs in each. Respond as if you are JARVIS from the Iron Man films.`;
             
             // Combine user prompt with system prompt
             const combinedPrompt = `${systemPrompt}\n\nUser: ${prompt}`;
@@ -136,8 +133,8 @@ AFRAME.registerComponent('voice-controller', {
                 }
               ],
               generationConfig: {
-                temperature: 0.2, // Reduced for more consistent responses
-                maxOutputTokens: 150, // Shorter responses for VR
+                temperature: 0.2,
+                maxOutputTokens: 150,
                 topP: 0.9,
                 topK: 30
               },
@@ -252,32 +249,53 @@ AFRAME.registerComponent('voice-controller', {
     this.recognition.onresult = this.onSpeechResult;
     
     this.recognition.onstart = () => {
+      this._isStartingRecognition = false;
       this.isListening = true;
       this.updateVoiceIndicator(true);
-      this.updateResponseText(`Listening for "${this.data.wakeWords[0]}"...`);
+      this.updateResponseText(`Listening${this.wakeWordDetected ? ' for command' : ` for "${this.data.wakeWord}"`}...`);
       this.el.emit('voice-listening-started');
       console.log('Speech recognition started');
     };
     
     this.recognition.onend = () => {
       console.log('Speech recognition ended');
+      this.isListening = false;
+      this.updateVoiceIndicator(false);
       
-      // If wake word was detected or we're processing a command, don't restart automatically
-      if (this.wakeWordDetected || this.processingCommand) {
-        this.isListening = false;
-        this.updateVoiceIndicator(false);
-        
-        // If we were just in wake word mode, start command mode
-        if (this.wakeWordDetected && !this.processingCommand) {
-          this.wakeWordDetected = false;
-          this.processingCommand = true;
-          setTimeout(() => this.startListening(), 300);
-        }
-      } else {
-        // Otherwise keep listening for wake word
+      // Don't auto-restart if manually stopped
+      if (this._manualStop) {
+        this._manualStop = false;
+        return;
+      }
+      
+      // If we just detected a wake word, start listening for commands
+      if (this.wakeWordDetected && !this.processingCommand) {
+        this.wakeWordDetected = false;
+        this.processingCommand = true;
         setTimeout(() => {
-          if (!this.wakeWordDetected && !this.processingCommand) {
+          if (!this._isStartingRecognition) {
             this.startListening();
+          }
+        }, 300);
+        return;
+      }
+      
+      // If we're not processing a command, restart listening for wake word
+      if (!this.processingCommand) {
+        // Continue listening after short delay
+        setTimeout(() => {
+          if (!this._isStartingRecognition && !window.speechSynthesis.speaking) {
+            this.startListening();
+          } else if (window.speechSynthesis.speaking) {
+            // If still speaking, wait until finished
+            const checkAndRestart = () => {
+              if (!window.speechSynthesis.speaking && !this._isStartingRecognition) {
+                this.startListening();
+              } else if (window.speechSynthesis.speaking) {
+                setTimeout(checkAndRestart, 500);
+              }
+            };
+            setTimeout(checkAndRestart, 500);
           }
         }, 300);
       }
@@ -285,15 +303,24 @@ AFRAME.registerComponent('voice-controller', {
     
     this.recognition.onerror = (event) => {
       console.error('Speech recognition error', event.error);
-      this.updateResponseText(`Error: ${event.error}`);
+      this._isStartingRecognition = false;
       this.isListening = false;
       this.updateVoiceIndicator(false);
+      this.updateResponseText(`Error: ${event.error}`);
       
       // Restart listening after error (except for when no-speech)
       if (event.error !== 'no-speech') {
-        setTimeout(() => this.startListening(), 2000);
+        setTimeout(() => {
+          if (!this._isStartingRecognition) {
+            this.startListening();
+          }
+        }, 2000);
       } else {
-        setTimeout(() => this.startListening(), 500);
+        setTimeout(() => {
+          if (!this._isStartingRecognition) {
+            this.startListening();
+          }
+        }, 500);
       }
     };
   },
@@ -351,27 +378,36 @@ AFRAME.registerComponent('voice-controller', {
         if (this.processingCommand) {
           this.processingCommand = false;
           this.wakeWordDetected = false;
-          setTimeout(() => this.startListening(), 500);
+          setTimeout(() => {
+            if (!this._isStartingRecognition) {
+              this.startListening();
+            }
+          }, 500);
         }
       };
     }
   },
   
   startListening: function() {
-    if (!this.recognition) {
-      console.warn('Speech recognition not initialized');
-      return;
-    }
+    if (!this.recognition || this._isStartingRecognition) return;
+    
+    // Set flag to prevent multiple simultaneous starts
+    this._isStartingRecognition = true;
     
     try {
       this.recognition.start();
     } catch (e) {
       console.error('Error starting speech recognition', e);
+      this._isStartingRecognition = false;
       
-      // If already started, stop and restart
+      // If already started, stop and restart after a delay
       if (e.name === 'InvalidStateError') {
-        this.recognition.stop();
-        setTimeout(() => this.startListening(), 500);
+        this.stopListening();
+        setTimeout(() => {
+          if (!this._isStartingRecognition) {
+            this.startListening();
+          }
+        }, 500);
       }
     }
   },
@@ -380,6 +416,7 @@ AFRAME.registerComponent('voice-controller', {
     if (!this.recognition) return;
     
     try {
+      this._manualStop = true;
       this.recognition.stop();
       this.isListening = false;
       this.updateVoiceIndicator(false);
@@ -420,7 +457,11 @@ AFRAME.registerComponent('voice-controller', {
     // Check for wake word if not already detected
     if (!this.wakeWordDetected && !this.processingCommand) {
       // Check each wake word
-      const detected = this.data.wakeWords.some(word => transcript.includes(word.toLowerCase()));
+      const wakeWordsArray = Array.isArray(this.data.wakeWords) ? 
+                            this.data.wakeWords : 
+                            [this.data.wakeWord];
+      
+      const detected = wakeWordsArray.some(word => transcript.includes(word.toLowerCase()));
       
       if (detected) {
         this.wakeWordDetected = true;
@@ -448,7 +489,11 @@ AFRAME.registerComponent('voice-controller', {
       
       // Remove wake word if present
       let command = transcript;
-      this.data.wakeWords.forEach(word => {
+      const wakeWordsArray = Array.isArray(this.data.wakeWords) ? 
+                           this.data.wakeWords : 
+                           [this.data.wakeWord];
+      
+      wakeWordsArray.forEach(word => {
         command = command.replace(word.toLowerCase(), "");
       });
       command = command.trim();
