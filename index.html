@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>JARVIS WebVR</title>
+  <meta name="description" content="An AR/VR interface with voice commands for productivity">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- A-Frame and A-Frame components -->
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://unpkg.com/aframe-environment-component@1.3.2/dist/aframe-environment-component.min.js"></script>
+  <script src="https://unpkg.com/aframe-event-set-component@3.0.3/dist/aframe-event-set-component.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-htmlembed-component@latest/dist/aframe-htmlembed-component.min.js"></script>
+  
+  <!-- Custom components -->
+  <script src="js/components.js"></script>
+  <script src="js/voice-controller.js"></script>
+  <script src="js/screen-manager.js"></script>
+  <script src="js/workstation-manager.js"></script>
+  <script src="js/hand-controller.js"></script>
+
+  <link rel="stylesheet" type="text/css" href="css/styles.css">
+</head>
+<body>
+  <div id="ui-overlay">
+    <div id="status-panel">
+      <div id="status-text">J.A.R.V.I.S. Standby</div>
+      <button id="activate-button">Activate</button>
+    </div>
+    
+    <div id="voice-panel">
+      <div id="voice-indicator"></div>
+      <div id="response-text">Say "Hey Jarvis" to activate</div>
+      <button id="listen-button">Listen</button>
+    </div>
+  </div>
+
+  <a-scene webxr="requiredFeatures: hit-test,local-floor;" 
+           environment="preset: default; ground: none;"
+           workstation-manager>
+    
+    <!-- Camera and controllers -->
+    <a-entity id="rig" position="0 1.6 0">
+      <a-camera id="camera" look-controls wasd-controls position="0 0 0"></a-camera>
+      
+      <a-entity id="left-hand" 
+                hand-tracking="hand: left"
+                hand-controls="hand: left; handModelStyle: lowPoly; color: #15ACCF"
+                visible="true"></a-entity>
+                
+      <a-entity id="right-hand" 
+                hand-tracking="hand: right"
+                hand-controls="hand: right; handModelStyle: lowPoly; color: #15ACCF"
+                visible="true"></a-entity>
+    </a-entity>
+    
+    <!-- Environment -->
+    <a-entity id="environment" 
+              environment="preset: default; 
+                         skyType: gradient; 
+                         lighting: point; 
+                         shadow: true; 
+                         ground: flat; 
+                         groundColor: #222; 
+                         groundColor2: #333; 
+                         dressing: none;"></a-entity>
+    
+    <!-- UI Elements -->
+    <a-entity id="ui-container" position="0 1.6 -2">
+      <!-- Will be filled dynamically -->
+    </a-entity>
+    
+    <!-- Initial welcome panel -->
+    <a-entity id="welcome-panel" 
+              position="0 1.6 -1"
+              geometry="primitive: plane; width: 1.5; height: 0.8"
+              material="color: #222; opacity: 0.8"
+              text="value: Welcome to JARVIS\nSay 'Hey Jarvis' or press the Listen button to begin; 
+                    color: #8CF; align: center; width: 1.4; wrapCount: 30"></a-entity>
+    
+    <!-- Floor surface for detecting tables -->
+    <a-entity id="floor" 
+              geometry="primitive: plane; width: 20; height: 20" 
+              rotation="-90 0 0"
+              material="color: #111; opacity: 0.3"
+              position="0 0 0"></a-entity>
+  </a-scene>
+  
+  <!-- WebGL Canvas container for hand particle effects -->
+  <div id="particles-container"></div>
+
+  <!-- Gemini API setup script -->
+  <script src="js/gemini-api.js"></script>
+  
+  <!-- Main script -->
+  <script src="js/main.js"></script>
+</body>
+</html>
