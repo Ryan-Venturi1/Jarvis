@@ -15,12 +15,14 @@
   <!-- Custom components -->
   <script src="js/components.js"></script>
   <script src="js/voice-controller.js"></script>
+  <script src="js/gemini-api.js"></script>
   <script src="js/screen-manager.js"></script>
   <script src="js/workstation-manager.js"></script>
   <script src="js/hand-controller.js"></script>
   <script src="js/environment-manager.js"></script>
   <script src="js/surface-detector.js"></script>
   <script src="js/remote-desktop-manager.js"></script>
+  <script src="js/notification-system.js"></script>
 
   <link rel="stylesheet" type="text/css" href="css/styles.css">
 </head>
@@ -46,31 +48,28 @@
   <a-scene webxr="requiredFeatures: hit-test,local-floor,hand-tracking; 
                   optionalFeatures: dom-overlay,unbounded;" 
            environment="preset: default; ground: none;"
-           workstation-manager
-           surface-detector
-           environment-manager
+           workstation-manager="autoStart: true"
+           enhanced-surface-detector="maxKeyboards: 3; showDebugVisuals: false"
+           environment-manager="defaultMode: lab"
            screen-manager="maxScreens: 10; maxTabsPerScreen: 10"
-           remote-desktop-manager
-           voice-controller="apiKey: AIzaSyC31UsvHYJQMpqFahpqX-t4yPCwdruL0h0">
+           remote-desktop-manager="maxConnections: 10"
+           voice-controller="apiKey: AIzaSyC31UsvHYJQMpqFahpqX-t4yPCwdruL0h0; autoStart: true; wakeWords: jarvis, hey jarvis, yo jarvis"
+           notification-system></a-scene>
     
     <!-- Camera and controllers -->
-    <a-entity id="rig" position="0 1.6 0">
-      <a-camera id="camera" look-controls wasd-controls position="0 0 0"></a-camera>
-      
-      <a-entity id="left-hand" 
-                hand-tracking="hand: left"
-                hand-controls="hand: left; handModelStyle: lowPoly; color: #15ACCF"
-                hand-controller="hand: left; effectColor: #15ACCF"
-                raycaster="objects: .virtual-screen, .keyboard-key; far: 3; showLine: true; lineColor: #15ACCF"
-                visible="true"></a-entity>
-                
-      <a-entity id="right-hand" 
-                hand-tracking="hand: right"
-                hand-controls="hand: right; handModelStyle: lowPoly; color: #15ACCF"
-                hand-controller="hand: right; effectColor: #4c86f1"
-                raycaster="objects: .virtual-screen, .keyboard-key; far: 3; showLine: true; lineColor: #4c86f1"
-                visible="true"></a-entity>
-    </a-entity>
+    <a-entity id="environment" 
+              environment="preset: starship; 
+                         skyType: gradient; 
+                         lighting: point; 
+                         shadow: true; 
+                         ground: flat; 
+                         groundColor: #222; 
+                         groundColor2: #333; 
+                         dressing: apparatus;
+                         dressingAmount: 15;
+                         dressingColor: #3a75e0;
+                         dressingScale: 1.2;
+                         gridColor: #4c86f1;"></a-entity>
     
     <!-- Environment -->
     <a-entity id="environment" 
@@ -112,5 +111,18 @@
   
   <!-- Main script -->
   <script src="js/main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Show welcome notification after short delay
+      setTimeout(() => {
+        const scene = document.querySelector('a-scene');
+        scene.emit('notification', {
+          message: 'JARVIS System Online. Say "Hey JARVIS" to begin.',
+          type: 'success',
+          duration: 5000
+        });
+      }, 3000);
+    });
+  </script>
 </body>
 </html>

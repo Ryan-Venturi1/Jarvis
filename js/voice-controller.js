@@ -37,7 +37,7 @@ AFRAME.registerComponent('voice-controller', {
         this.toggleListening();
       }
     });
-    
+    this._manualStop = false;
     // Setup speech recognition if available
     this.setupSpeechRecognition();
     
@@ -101,18 +101,35 @@ AFRAME.registerComponent('voice-controller', {
     this.recognition.onend = () => {
       console.log('Speech recognition ended');
       
-      // If wake word was detected, don't restart automatically
-      if (this.wakeWordDetected) {
+      // Always restart listening if not manually stopped
+      if (this._manualStop) {
         this.isListening = false;
-        this.wakeWordDetected = false;
         this.updateVoiceIndicator(false);
+        this._manualStop = false;
       } else {
-        // Otherwise keep listening for wake word
+        // If we were just in wake word mode, transition to command mode
+        if (this.wakeWordDetected && !this.processingCommand) {
+          this.wakeWordDetected = false;
+          this.processingCommand = true;
+        }
+        
+        // Continue listening after short delay
         setTimeout(() => {
-          if (!this.wakeWordDetected) {
+          // Ensure we're not speaking before restarting
+          if (!window.speechSynthesis.speaking) {
             this.startListening();
+          } else {
+            // If still speaking, wait until finished
+            const checkAndRestart = () => {
+              if (!window.speechSynthesis.speaking) {
+                this.startListening();
+              } else {
+                setTimeout(checkAndRestart, 500);
+              }
+            };
+            setTimeout(checkAndRestart, 500);
           }
-        }, 500);
+        }, 300);
       }
     };
     
@@ -154,6 +171,7 @@ AFRAME.registerComponent('voice-controller', {
     if (!this.recognition) return;
     
     try {
+      this._manualStop = true; // Flag for manual stop
       this.recognition.stop();
       this.isListening = false;
       this.updateVoiceIndicator(false);
@@ -161,6 +179,9 @@ AFRAME.registerComponent('voice-controller', {
       console.error('Error stopping speech recognition', e);
     }
   },
+  
+  // ADD TO INIT FUNCTION (around line 40):
+
   
   toggleListening: function() {
     if (this.isListening) {

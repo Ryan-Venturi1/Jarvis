@@ -108,40 +108,323 @@ AFRAME.registerComponent('environment-manager', {
     },
     
     enableLabMode: function() {
-      console.log('Enabling enhanced lab environment');
+        console.log('Enabling Stark Industries lab environment');
+        
+        // In Lab mode, show the environment with enhanced settings
+        if (this.environment) {
+          this.environment.setAttribute('visible', true);
+          this.environment.setAttribute('environment', {
+            preset: 'starship',         // More futuristic setting
+            lighting: 'point',          // Dramatic lighting
+            shadow: true,               // Enable shadows
+            ground: 'flat',             // Flat ground
+            groundColor: '#111',        // Dark floor
+            groundColor2: '#222',       // Gradient floor
+            dressing: 'apparatus',      // High-tech equipment 
+            dressingAmount: 15,         // More objects
+            dressingColor: '#3a75e0',   // Stark blue accents
+            dressingScale: 1.2,         // Larger objects
+            dressingVariance: '2 1 2',  // More variance in equipment
+            dressingUniformScale: false,// Allow non-uniform scaling
+            fog: 0.2,                   // Light atmospheric fog
+            grid: '1x1',                // Grid pattern
+            gridColor: '#4c86f1'        // Stark blue grid
+          });
+        }
+        
+        if (this.floor) {
+          this.floor.setAttribute('visible', true);
+          // Add reflective property to floor
+          this.floor.setAttribute('material', 'color: #111; opacity: 0.9; metalness: 0.5; roughness: 0.2');
+        }
+        
+        // Add enhanced lab-specific elements
+        this.addEnhancedLabElements();
+        
+        // Adjust existing screens for Lab
+        this.adjustScreensForAR(false);
+        
+        // Reset scene background
+        this.el.sceneEl.setAttribute('background', {color: '#000'});
+      },
       
-      // In Lab mode, show the environment
-      if (this.environment) {
-        this.environment.setAttribute('visible', true);
-        this.environment.setAttribute('environment', {
-          preset: this.data.labPreset,
-          lighting: this.data.labLighting,
-          shadow: true,
-          ground: 'flat',
-          groundColor: this.data.labGroundColor,
-          groundColor2: '#333',
-          dressing: 'office', // Add furniture and objects
-          dressingAmount: 10, // Moderate amount of objects
-          dressingColor: '#888',
-          fog: 0.4,
-          grid: 'dots',
-          gridColor: this.data.labGridColor
+      // NEW FUNCTION - Add this after addLabElements function:
+      addEnhancedLabElements: function() {
+        const scene = this.el.sceneEl;
+        
+        // Check if we already added enhanced lab elements
+        if (document.getElementById('enhanced-lab-elements')) {
+          document.getElementById('enhanced-lab-elements').setAttribute('visible', true);
+          return;
+        }
+        
+        // Create container for enhanced lab elements
+        const labElements = document.createElement('a-entity');
+        labElements.setAttribute('id', 'enhanced-lab-elements');
+        
+        // ---- Add Iron Man suit display ----
+        const suitDisplay = document.createElement('a-entity');
+        suitDisplay.setAttribute('id', 'ironman-suit-display');
+        suitDisplay.setAttribute('position', '0 0 -3');
+        
+        // Pedestal
+        const pedestal = document.createElement('a-cylinder');
+        pedestal.setAttribute('radius', '0.5');
+        pedestal.setAttribute('height', '0.1');
+        pedestal.setAttribute('position', '0 0.05 0');
+        pedestal.setAttribute('material', 'color: #333; metalness: 0.8; roughness: 0.2');
+        suitDisplay.appendChild(pedestal);
+        
+        // Holographic suit outline
+        const suitHolo = document.createElement('a-entity');
+        suitHolo.setAttribute('position', '0 0.9 0');
+        suitHolo.setAttribute('scale', '0.8 0.8 0.8');
+        
+        // Create simplified Iron Man shape
+        const suitParts = [
+          { type: 'sphere', position: '0 0.5 0', scale: '0.3 0.3 0.3' }, // Head
+          { type: 'box', position: '0 0.15 0', scale: '0.6 0.4 0.2' },    // Chest
+          { type: 'box', position: '0 -0.2 0', scale: '0.4 0.3 0.2' },    // Abdomen
+          { type: 'box', position: '-0.25 0.15 0', scale: '0.15 0.4 0.2' }, // Left arm
+          { type: 'box', position: '0.25 0.15 0', scale: '0.15 0.4 0.2' },  // Right arm
+          { type: 'box', position: '-0.2 -0.5 0', scale: '0.15 0.5 0.2' },  // Left leg
+          { type: 'box', position: '0.2 -0.5 0', scale: '0.15 0.5 0.2' }    // Right leg
+        ];
+        
+        suitParts.forEach((part, index) => {
+          const element = document.createElement('a-entity');
+          element.setAttribute('geometry', `primitive: ${part.type}`);
+          element.setAttribute('position', part.position);
+          element.setAttribute('scale', part.scale);
+          element.setAttribute('material', 'color: #4c86f1; opacity: 0.3; transparent: true; wireframe: true; emissive: #4c86f1; emissiveIntensity: 0.5');
+          suitHolo.appendChild(element);
         });
-      }
-      
-      if (this.floor) {
-        this.floor.setAttribute('visible', true);
-      }
-      
-      // Add lab-specific elements if they don't exist yet
-      this.addLabElements();
-      
-      // Adjust existing screens for Lab
-      this.adjustScreensForAR(false);
-      
-      // Reset scene background
-      this.el.sceneEl.setAttribute('background', {color: '#000'});
-    },
+        
+        // Add rotation animation
+        suitHolo.setAttribute('animation', 'property: rotation; to: 0 360 0; dur: 20000; easing: linear; loop: true');
+        
+        // Add glow effect
+        const suitGlow = document.createElement('a-light');
+        suitGlow.setAttribute('type', 'point');
+        suitGlow.setAttribute('color', '#4c86f1');
+        suitGlow.setAttribute('intensity', '0.5');
+        suitGlow.setAttribute('distance', '2');
+        suitGlow.setAttribute('animation', 'property: intensity; to: 0.8; dur: 2000; dir: alternate; easing: easeInOutSine; loop: true');
+        suitHolo.appendChild(suitGlow);
+        
+        suitDisplay.appendChild(suitHolo);
+        labElements.appendChild(suitDisplay);
+        
+        // ---- Add holographic workstations ----
+        const workstationPositions = [
+          { x: -2.5, y: 0, z: -1.5, ry: 30 },
+          { x: 2.5, y: 0, z: -1.5, ry: -30 }
+        ];
+        
+        workstationPositions.forEach((pos, index) => {
+          const workstation = document.createElement('a-entity');
+          workstation.setAttribute('id', `holo-workstation-${index}`);
+          workstation.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
+          workstation.setAttribute('rotation', `0 ${pos.ry} 0`);
+          
+          // Create desk
+          const desk = document.createElement('a-box');
+          desk.setAttribute('width', '1.5');
+          desk.setAttribute('depth', '0.8');
+          desk.setAttribute('height', '0.05');
+          desk.setAttribute('position', '0 0.75 0');
+          desk.setAttribute('material', 'color: #222; opacity: 0.9; metalness: 0.7; roughness: 0.2');
+          
+          // Create holographic screens above desk
+          const screen1 = document.createElement('a-entity');
+          screen1.setAttribute('geometry', 'primitive: plane; width: 1.2; height: 0.7');
+          screen1.setAttribute('position', '0 1.25 -0.2');
+          screen1.setAttribute('rotation', '-20 0 0');
+          screen1.setAttribute('material', 'color: #4c86f1; opacity: 0.7; transparent: true; side: double');
+          
+          // Add data visualization effect
+          const dataViz = document.createElement('a-entity');
+          dataViz.setAttribute('geometry', 'primitive: plane; width: 1.15; height: 0.65');
+          dataViz.setAttribute('position', '0 0 0.01');
+          dataViz.setAttribute('material', 'shader: flat; opacity: 0.9; transparent: true; src: #data-texture');
+          screen1.appendChild(dataViz);
+          
+          // Create multiple smaller screens
+          const screen2 = document.createElement('a-entity');
+          screen2.setAttribute('geometry', 'primitive: plane; width: 0.5; height: 0.4');
+          screen2.setAttribute('position', '-0.5 1.6 -0.3');
+          screen2.setAttribute('rotation', '-20 20 0');
+          screen2.setAttribute('material', 'color: #15ACCF; opacity: 0.7; transparent: true; side: double');
+          
+          const screen3 = document.createElement('a-entity');
+          screen3.setAttribute('geometry', 'primitive: plane; width: 0.5; height: 0.4');
+          screen3.setAttribute('position', '0.5 1.6 -0.3');
+          screen3.setAttribute('rotation', '-20 -20 0');
+          screen3.setAttribute('material', 'color: #15ACCF; opacity: 0.7; transparent: true; side: double');
+          
+          // Add screens to workstation
+          workstation.appendChild(desk);
+          workstation.appendChild(screen1);
+          workstation.appendChild(screen2);
+          workstation.appendChild(screen3);
+          
+          // Add desk chair
+          const chair = document.createElement('a-entity');
+          chair.setAttribute('position', '0 0 0.6');
+          
+          const chairSeat = document.createElement('a-box');
+          chairSeat.setAttribute('width', '0.6');
+          chairSeat.setAttribute('depth', '0.6');
+          chairSeat.setAttribute('height', '0.1');
+          chairSeat.setAttribute('position', '0 0.4 0');
+          chairSeat.setAttribute('material', 'color: #333');
+          
+          const chairBack = document.createElement('a-box');
+          chairBack.setAttribute('width', '0.6');
+          chairBack.setAttribute('depth', '0.1');
+          chairBack.setAttribute('height', '0.6');
+          chairBack.setAttribute('position', '0 0.7 -0.25');
+          chairBack.setAttribute('material', 'color: #333');
+          
+          chair.appendChild(chairSeat);
+          chair.appendChild(chairBack);
+          workstation.appendChild(chair);
+          
+          labElements.appendChild(workstation);
+        });
+        
+        // ---- Add laboratory equipment ----
+        const labEquipment = document.createElement('a-entity');
+        labEquipment.setAttribute('id', 'lab-equipment');
+        labEquipment.setAttribute('position', '0 0 -5');
+        
+        // Create equipment racks
+        const rackPositions = [
+          { x: -4, y: 0, z: 0, ry: 90 },
+          { x: 4, y: 0, z: 0, ry: -90 },
+          { x: 0, y: 0, z: -2, ry: 0 }
+        ];
+        
+        rackPositions.forEach((pos, index) => {
+          const rack = document.createElement('a-entity');
+          rack.setAttribute('id', `equipment-rack-${index}`);
+          rack.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
+          rack.setAttribute('rotation', `0 ${pos.ry} 0`);
+          
+          // Create rack frame
+          const frame = document.createElement('a-box');
+          frame.setAttribute('width', '1.5');
+          frame.setAttribute('depth', '0.8');
+          frame.setAttribute('height', '2.2');
+          frame.setAttribute('position', '0 1.1 0');
+          frame.setAttribute('material', 'color: #333; opacity: 0.9; metalness: 0.7; roughness: 0.3; wireframe: true');
+          
+          // Add shelves
+          for (let i = 0; i < 4; i++) {
+            const shelf = document.createElement('a-box');
+            shelf.setAttribute('width', '1.5');
+            shelf.setAttribute('depth', '0.8');
+            shelf.setAttribute('height', '0.05');
+            shelf.setAttribute('position', `0 ${0.1 + i * 0.7} 0`);
+            shelf.setAttribute('material', 'color: #444; metalness: 0.7; roughness: 0.3');
+            rack.appendChild(shelf);
+            
+            // Add random equipment to each shelf
+            const equipmentCount = 1 + Math.floor(Math.random() * 3);
+            for (let j = 0; j < equipmentCount; j++) {
+              const equipment = document.createElement('a-entity');
+              
+              // Randomize equipment type
+              const equipType = Math.floor(Math.random() * 3);
+              if (equipType === 0) {
+                // Box-shaped device
+                equipment.setAttribute('geometry', 'primitive: box');
+                equipment.setAttribute('scale', `${0.2 + Math.random() * 0.2} ${0.1 + Math.random() * 0.2} ${0.2 + Math.random() * 0.2}`);
+              } else if (equipType === 1) {
+                // Cylindrical device
+                equipment.setAttribute('geometry', 'primitive: cylinder');
+                equipment.setAttribute('scale', `${0.1 + Math.random() * 0.1} ${0.1 + Math.random() * 0.3} ${0.1 + Math.random() * 0.1}`);
+              } else {
+                // Spherical device
+                equipment.setAttribute('geometry', 'primitive: sphere');
+                equipment.setAttribute('scale', `${0.1 + Math.random() * 0.15} ${0.1 + Math.random() * 0.15} ${0.1 + Math.random() * 0.15}`);
+              }
+              
+              // Position on shelf
+              equipment.setAttribute('position', `${-0.5 + j * 0.5} ${0.1 + i * 0.7 + 0.15} ${-0.2 + Math.random() * 0.4}`);
+              
+              // Random color with tech look
+              const colors = ['#4c86f1', '#15ACCF', '#FF5722', '#3a75e0', '#444'];
+              const colorIndex = Math.floor(Math.random() * colors.length);
+              equipment.setAttribute('material', `color: ${colors[colorIndex]}; metalness: 0.8; roughness: 0.2`);
+              
+              // Add random blinking light to some equipment
+              if (Math.random() > 0.7) {
+                const light = document.createElement('a-entity');
+                light.setAttribute('geometry', 'primitive: sphere; radius: 0.02');
+                light.setAttribute('position', `0 ${0.05 + Math.random() * 0.05} 0.1`);
+                light.setAttribute('material', 'color: #FF5722; emissive: #FF5722; emissiveIntensity: 0.8');
+                light.setAttribute('animation', 'property: material.emissiveIntensity; to: 0.2; dur: 1000; dir: alternate; easing: easeInOutSine; loop: true');
+                equipment.appendChild(light);
+              }
+              
+              rack.appendChild(equipment);
+            }
+          }
+          
+          labEquipment.appendChild(rack);
+        });
+        
+        labElements.appendChild(labEquipment);
+        
+        // Add atmospheric effects
+        const atmosphere = document.createElement('a-entity');
+        atmosphere.setAttribute('id', 'lab-atmosphere');
+        
+        // Add some ambient particles
+        for (let i = 0; i < 20; i++) {
+          const particle = document.createElement('a-entity');
+          
+          // Random position within the lab
+          const px = -5 + Math.random() * 10;
+          const py = 0.5 + Math.random() * 2.5;
+          const pz = -5 + Math.random() * 5;
+          
+          particle.setAttribute('geometry', 'primitive: sphere; radius: 0.03');
+          particle.setAttribute('position', `${px} ${py} ${pz}`);
+          particle.setAttribute('material', 'color: #4c86f1; opacity: 0.3; transparent: true; emissive: #4c86f1; emissiveIntensity: 0.5');
+          
+          // Add floating animation
+          const animDuration = 5000 + Math.random() * 5000;
+          const floatHeight = 0.1 + Math.random() * 0.3;
+          particle.setAttribute('animation', `property: position; to: ${px} ${py + floatHeight} ${pz}; dur: ${animDuration}; dir: alternate; easing: easeInOutSine; loop: true`);
+          
+          // Add pulsing animation
+          particle.setAttribute('animation__pulse', 'property: material.opacity; to: 0.1; dur: 2000; dir: alternate; easing: easeInOutSine; loop: true');
+          
+          atmosphere.appendChild(particle);
+        }
+        
+        labElements.appendChild(atmosphere);
+        
+        // Add to scene
+        scene.appendChild(labElements);
+        
+        // Create and add data visualization texture if not already present
+        if (!document.querySelector('#data-texture')) {
+          const assets = document.querySelector('a-assets') || document.createElement('a-assets');
+          
+          const dataImg = document.createElement('img');
+          dataImg.setAttribute('id', 'data-texture');
+          dataImg.setAttribute('src', 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjMwMCIgZmlsbD0iIzAzMDMxMCIgLz48dGV4dCB4PSIyMCIgeT0iMzAiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM0Yzg2ZjEiPkpBUlZJUyBPUEVSQVRJTkcgU1lTVEVNIHYxMC4zLjQ8L3RleHQ+PHRleHQgeD0iMjAiIHk9IjYwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjNGM4NmYxIj5TeXN0ZW0gU3RhdHVzOiBPTkxJTkU8L3RleHQ+PHRleHQgeD0iMjAiIHk9IjgwIiBmb250LWZhbWlseT0ibW9ub3NwYWNlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjNGM4NmYxIj5TZWNob2UgU2VjdXJpdHk6IEFDVEJWRSBNT05JVE9SSU5HPC90ZXh0PjxjaXJjbGUgY3g9IjIwIiBjeT0iMTIwIiByPSI1IiBmaWxsPSIjNGM4NmYxIj48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiB2YWx1ZXM9IjE7MC41OzE7MSIgZHVyPSIycyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIC8+PC9jaXJjbGU+PHRleHQgeD0iMzUiIHk9IjEyNSIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzRjODZmMSI+QVJDIFJlYWN0b3I6IE5vbWluYWw8L3RleHQ+PGNpcmNsZSBjeD0iMjAiIGN5PSIxNDAiIHI9IjUiIGZpbGw9IiM0Yzg2ZjEiPjxhbmltYXRlIGF0dHJpYnV0ZU5hbWU9Im9wYWNpdHkiIHZhbHVlcz0iMTswLjU7MTsxIiBkdXI9IjIuNXMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiAvPjwvY2lyY2xlPjx0ZXh0IHg9IjM1IiB5PSIxNDUiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM0Yzg2ZjEiPlNlY3VyaXR5IFN5c3RlbXM6IE9OTElORTwvdGV4dD48cGF0aCBkPSJNMTAwIDIwMCBMMTUwIDE3MCBMMjAwIDIxMCBMMjUwIDE4MCBMMzAwIDIzMCBMMzUwIDE5MCBMNDAwIDIxMCBMNDUwIDE4MCIgc3Ryb2tlPSIjNGM4NmYxIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiIC8+PHBhdGggZD0iTTEwMCAyNTAgTDE1MCAyNDAgTDIwMCAyNjAgTDI1MCAyMzAgTDMwMCAyNTAgTDM1MCAyMzAgTDQwMCAyNTAgTDQ1MCAyMzAiIHN0cm9rZT0iIzE1QUNDRiIgc3Ryb2tlLXdpZHRoPSIyIiBmaWxsPSJub25lIiAvPjwvc3ZnPg==');
+          
+          if (!document.querySelector('a-assets')) {
+            scene.appendChild(assets);
+          }
+          
+          document.querySelector('a-assets').appendChild(dataImg);
+        }
+      },
     
     addLabElements: function() {
       const scene = this.el.sceneEl;
