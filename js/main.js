@@ -325,9 +325,7 @@ function configureForMetaQuest() {
   }
   
   // Set up surface detector for keyboard placement
-  if (!scene.getAttribute('surface-detector')) {
-    scene.setAttribute('surface-detector', '');
-  }
+  console.log('Using pre-configured surface detector');
   
   // Set up environment manager
   if (!scene.getAttribute('environment-manager')) {
