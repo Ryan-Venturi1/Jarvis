@@ -382,13 +382,65 @@ AFRAME.registerComponent('screen-manager', {
         message.setAttribute('position', '0 0 0.01');
         container.appendChild(message);
       }
-    } else if (url.startsWith('rdp:')) {
-      // Remote desktop connection
-      const rdpTarget = url.substring(4);
-      const rdpScreen = document.createElement('a-entity');
-      rdpScreen.setAttribute('text', `value: Remote Desktop Connection to ${rdpTarget}\n\nConnecting...; align: center; width: ${template.width - 0.2}`);
-      rdpScreen.setAttribute('position', '0 0 0.01');
-      container.appendChild(rdpScreen);
+    } else if (url.startsWith('rdp:') || url.startsWith('ms-rdp:')) {
+      // Remote desktop connection - create a better visual representation
+      const rdpTarget = url.startsWith('rdp:') ? url.substring(4) : url.substring(7);
+      const rdpContainer = document.createElement('a-entity');
+      rdpContainer.setAttribute('position', '0 0 0.01');
+      
+      // Add Remote Desktop visual interface
+      const rdpInterface = document.createElement('a-plane');
+      rdpInterface.setAttribute('width', template.width - 0.2);
+      rdpInterface.setAttribute('height', template.height - 0.4);
+      rdpInterface.setAttribute('color', '#0078d7'); // Windows blue
+      rdpInterface.setAttribute('position', '0 -0.05 0');
+      
+      // Add Windows logo
+      const rdpLogo = document.createElement('a-entity');
+      rdpLogo.setAttribute('geometry', 'primitive: plane; width: 0.3; height: 0.3');
+      rdpLogo.setAttribute('material', 'color: white; opacity: 0.9');
+      rdpLogo.setAttribute('position', '0 0.1 0.01');
+      rdpInterface.appendChild(rdpLogo);
+      
+      // Add connection text
+      const rdpText = document.createElement('a-entity');
+      rdpText.setAttribute('text', `value: Remote Desktop Connection\n\nTarget: ${rdpTarget || 'Default'}\n\nClick to connect; align: center; width: ${template.width - 0.4}; color: white; wrapCount: 40`);
+      rdpText.setAttribute('position', '0 -0.15 0.01');
+      rdpInterface.appendChild(rdpText);
+      
+      // Add connect button
+      const rdpConnectBtn = document.createElement('a-entity');
+      rdpConnectBtn.setAttribute('geometry', 'primitive: plane; width: 0.4; height: 0.1');
+      rdpConnectBtn.setAttribute('material', 'color: #333333');
+      rdpConnectBtn.setAttribute('position', '0 -0.3 0.01');
+      rdpConnectBtn.setAttribute('text', 'value: Connect; align: center; width: 1; color: white');
+      
+      // Handle connect button click
+      rdpConnectBtn.addEventListener('click', () => {
+        rdpText.setAttribute('text', `value: Connecting to ${rdpTarget || 'Default'}...\n\nPlease wait...; align: center; width: ${template.width - 0.4}; color: white; wrapCount: 40`);
+        
+        // Simulate connection (in a real app, this would open actual RDP)
+        setTimeout(() => {
+          rdpText.setAttribute('text', `value: Connected to ${rdpTarget || 'Default'}\n\nSession active; align: center; width: ${template.width - 0.4}; color: white; wrapCount: 40`);
+          rdpInterface.setAttribute('color', '#444444');
+          
+          // Notify remote desktop manager
+          document.querySelector('a-scene').emit('remote-desktop-connected', {
+            target: rdpTarget
+          });
+        }, 2000);
+      });
+      
+      rdpInterface.appendChild(rdpConnectBtn);
+      rdpContainer.appendChild(rdpInterface);
+      container.appendChild(rdpContainer);
+    } else if (url.startsWith('vnc:')) {
+      // VNC connection
+      const vncTarget = url.substring(4);
+      const vncScreen = document.createElement('a-entity');
+      vncScreen.setAttribute('text', `value: VNC Connection to ${vncTarget}\n\nVNC support is coming soon; align: center; width: ${template.width - 0.2}`);
+      vncScreen.setAttribute('position', '0 0 0.01');
+      container.appendChild(vncScreen);
     } else {
       // Text content
       const text = document.createElement('a-entity');
